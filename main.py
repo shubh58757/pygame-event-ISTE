@@ -16,29 +16,29 @@ class character:
         self.x = x
         self.y = y
         self.img =  pygame.image.load('assets/man.png')
-        self.img = pygame.transform.scale(self.img,(50,50))
+        self.img = pygame.transform.scale(self.img,(100,100))
         self.rect = self.img.get_rect()
         self.rect.center = (x,y)
         self.is_jump = False
-        self.jump_count = 10
+        self.jump_count = 15
 
     def draw(self):
         self.rect.center = (self.x,self.y)
         screen.blit(self.img, self.rect)
 
     def jump(self):
-        if(self.jump_count>=-10):
+        if(self.jump_count>=-15):
             n =1
             if(self.jump_count<0):
                 n=-1
-            self.y-=(self.jump_count**2)/10*n
+            self.y-=(self.jump_count**2)/15*n
             self.jump_count-=1
         else:
             self.is_jump=False
-            self.jump_count =10
+            self.jump_count =15
 
 
-player = character(100, 400)
+player = character(100, 375)
 while main_loop:
 
     for event in pygame.event.get():
