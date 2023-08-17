@@ -11,7 +11,7 @@ screen = pygame.display.set_mode((screen_width, screen_height))
 pygame.display.set_caption("Jump")
 
 # Load the background image
-background_image = pygame.image.load("assets/pixel-art-pixelated-wallpaper-preview.jpg").convert()
+background_image = pygame.image.load("assets/background.png").convert()
 background_image = pygame.transform.scale(background_image, (screen_width, screen_height))
 bg_width = background_image.get_width()
 
@@ -27,27 +27,27 @@ class Character:
         self.rect = character_image.get_rect()
         self.rect.center = (x, y)
         self.is_jump = False
-        self.jump_count = 15
+        self.jump_count = 20
 
     def draw(self):
         self.rect.center = (self.x, self.y)
         screen.blit(character_image, self.rect)
-
+        
     def jump(self):
-        if self.jump_count >= -15:
+        if self.jump_count >= -20:
             n = 1
             if self.jump_count < 0:
                 n = -1
-            self.y -= (self.jump_count ** 2) / 15 * n
+            self.y -= (self.jump_count ** 2) / 10 * n
             self.jump_count -= 1
         else:
             self.is_jump = False
-            self.jump_count = 15
+            self.jump_count = 20
 
 
 
 # Create the character
-player = Character(100, 375)
+player = Character(100, 382)
 
 # Game loop
 running = True
