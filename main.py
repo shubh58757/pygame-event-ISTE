@@ -7,7 +7,7 @@ FPS = 30
 fpsClock = pygame.time.Clock()
 
 pygame.display.set_caption('Game')
-background_img = pygame.image.load('assests/images/pixel-art-pixelated-wallpaper-preview.jpg')
+background_img = pygame.image.load('assests/pixel-art-pixelated-wallpaper-preview.jpg')
 background_img = pygame.transform.scale(background_img, (1000,500))
 main_loop =  True
 
@@ -15,7 +15,7 @@ class character:
     def __init__(self , x, y):
         self.x = x
         self.y = y
-        self.img =  pygame.image.load('assests/images/man.png')
+        self.img =  pygame.image.load('assests/man.png')
         self.img = pygame.transform.scale(self.img,(50,50))
         self.rect = self.img.get_rect()
         self.rect.center = (x,y)
