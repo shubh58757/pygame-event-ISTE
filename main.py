@@ -19,14 +19,14 @@ bg_width = background_image.get_width()
 
 # Load the character image
 character_image = pygame.image.load("assets/man.png").convert_alpha()
-character_image = pygame.transform.scale(character_image, (100, 100))
+character_image = pygame.transform.scale(character_image, (50, 100))
 
 class Enemy:
     def __init__(self, x, y):
         self.x = x
         self.y = player.y
         self.img = pygame.image.load('assets/enemy.png') 
-        self.img = pygame.transform.scale(self.img, (100, 100))
+        self.img = pygame.transform.scale(self.img, (75, 75))
         self.rect = self.img.get_rect()
         self.rect.center = (x, y)
 
@@ -45,25 +45,26 @@ class Character:
         self.rect = self.img.get_rect()
         self.rect.center = (x, y)
         self.is_jump = False
-        self.jump_count = 20
+        self.jump_count = 15
 
     def draw(self):
         self.rect.center = (self.x, self.y)
         screen.blit(self.img, self.rect)
 
     def jump(self):
-        if self.jump_count >= -20:
+        if self.jump_count >= -15:
             n = 1
             if self.jump_count < 0:
                 n = -1
-            self.y -= (self.jump_count ** 2) / 10 * n
+            jump_count_x=10
+            self.y -= ((self.jump_count ** 2) / 10 * n)
+            #self.x +=((jump_count_x)/10*n)
             self.jump_count -= 1
+
         else:
             self.is_jump = False
-            self.jump_count = 20
-
-            self.is_jump = False
             self.jump_count = 15
+
 
 player = Character(100, 375)
 game_over_font = pygame.font.Font(None, 64)  
@@ -112,7 +113,7 @@ while running:
             last_enemy_spawn_time = current_time  
 
     for enemy in enemies:
-        enemy.x -= 5
+        enemy.x -= 15
         enemy.draw()
 
         if enemy.rect.colliderect(player.rect):
