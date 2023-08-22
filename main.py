@@ -2,6 +2,8 @@ import pygame
 import random
 import sys
 
+
+
 pygame.init()
 
 # Screen dimensions
@@ -21,6 +23,13 @@ bg_width = background_image.get_width()
 character_image = pygame.image.load("assets/man.png").convert_alpha()
 character_image = pygame.transform.scale(character_image, (50, 100))
 
+player_lives = 3
+font = pygame.font.Font(None, 36)
+
+lives_text = font.render(f"Lives: {player_lives}", True, (255, 255, 255))
+screen.blit(lives_text, (screen_width - 120, 10))
+
+
 class Enemy:
     def __init__(self, x, y):
         self.x = x
@@ -32,7 +41,7 @@ class Enemy:
         self.run_animation_count=0
         self.img_dict = {
             0:'assets/enemy1.png',
-            1:'assets/enemy2.png',
+            1:'assets/enemy2.png', 
             2:'assets/enemy3.png',
         }
     def draw(self):
@@ -92,7 +101,8 @@ class Character:
             self.rect.center = (self.x, self.y)
             self.run_animation_count+=0.5
             self.run_animation_count=self.run_animation_count%4
-player = Character(100, 375)
+            
+player = Character(100, 382)
 game_over_font = pygame.font.Font(None, 64)  
 
 last_enemy_spawn_time = pygame.time.get_ticks()
@@ -114,7 +124,6 @@ while running:
             if not player.is_jump:
                 if event.key == pygame.K_SPACE:
                     player.is_jump = True
-
     if player.is_jump:
         player.jump()
 
@@ -133,7 +142,7 @@ while running:
     if current_time - last_enemy_spawn_time >= 2000:
         if random.randint(0, 100) < 2:
             enemy_x = screen_width
-            enemy_y = 375
+            enemy_y = 382
             enemy = Enemy(enemy_x, enemy_y)
             enemies.append(enemy)
             last_enemy_spawn_time = current_time  
@@ -142,16 +151,30 @@ while running:
         enemy.x -= 15
         enemy.draw()
         enemy.run_animation_enemy()
+
         if enemy.rect.colliderect(player.rect):
-            game_over_text = game_over_font.render("Game Over", True, (255, 255, 255))
-            screen.blit(game_over_text, (screen_width // 2-120, screen_height // 2))
-            pygame.display.update()
-            pygame.time.wait(2000)  
-            pygame.quit()
-            sys.exit()
+            player_lives -= 1
+            player.x = 100  # Reset player's x position
+            player.y = 382  # Reset player's y position
+            speed_increasing_rate = 0
+            
+            if player_lives <= 0:
+                game_over_text = game_over_font.render("Game Over", True, (255, 255, 255))
+                screen.blit(game_over_text, (screen_width // 2 - 120, screen_height // 2))
+                pygame.display.update()
+                pygame.time.wait(2000)
+                pygame.quit()
+                sys.exit()
+
+            enemies.remove(enemy)  # Move this line inside the collision check loop
 
         if enemy.x + enemy.rect.width < 0:
             enemies.remove(enemy)
+
+    lives_text = font.render(f"Lives: {player_lives}", True, (0, 0, 0))
+    screen.blit(lives_text, (screen_width - 120, 10))
+    
+
     player.run_animation_player()
     pygame.display.update()
     clock.tick(30)
