@@ -24,28 +24,47 @@ character_image = pygame.transform.scale(character_image, (50, 100))
 class Enemy:
     def __init__(self, x, y):
         self.x = x
-        self.y = player.y
-        self.img = pygame.image.load('assets/enemy.png') 
-        self.img = pygame.transform.scale(self.img, (75, 75))
+        self.y = player.y+25
+        self.img = pygame.image.load('assets/enemy1.png') 
+        self.img = pygame.transform.scale(self.img, (50, 50))
         self.rect = self.img.get_rect()
         self.rect.center = (x, y)
-
+        self.run_animation_count=0
+        self.img_dict = {
+            0:'assets/enemy1.png',
+            1:'assets/enemy2.png',
+            2:'assets/enemy3.png',
+        }
     def draw(self):
         self.rect.center = (self.x, self.y)
         screen.blit(self.img, self.rect)
-
+    def run_animation_enemy(self):
+        self.img = pygame.image.load(self.img_dict[int(self.run_animation_count)])
+        self.img = pygame.transform.scale(self.img, (50, 50))
+        self.rect = self.img.get_rect()
+        self.rect.center = (self.x, self.y)
+        self.run_animation_count+=0.3
+        self.run_animation_count=self.run_animation_count%3
 enemies = []
 
 class Character:
     def __init__(self, x, y):
         self.x = x
         self.y = y
-        self.img = pygame.image.load('assets/man.png')
+        self.img = pygame.image.load('assets/run1.png')
         self.img = pygame.transform.scale(self.img, (100, 100))
         self.rect = self.img.get_rect()
         self.rect.center = (x, y)
         self.is_jump = False
         self.jump_count = 15
+        self.run_animation_count = 0
+        self.img_dict = {
+            0:'assets/run1.png',
+            1:'assets/run2.png',
+            2:'assets/run3.png',
+            3:'assets/run4.png',
+        }
+        
 
     def draw(self):
         self.rect.center = (self.x, self.y)
@@ -65,7 +84,14 @@ class Character:
             self.is_jump = False
             self.jump_count = 15
 
-
+    def run_animation_player(self):
+        if(not self.is_jump ):
+            self.img = pygame.image.load(self.img_dict[int(self.run_animation_count)])
+            self.img = pygame.transform.scale(self.img, (100, 100))
+            self.rect = self.img.get_rect()
+            self.rect.center = (self.x, self.y)
+            self.run_animation_count+=0.5
+            self.run_animation_count=self.run_animation_count%4
 player = Character(100, 375)
 game_over_font = pygame.font.Font(None, 64)  
 
@@ -115,7 +141,7 @@ while running:
     for enemy in enemies:
         enemy.x -= 15
         enemy.draw()
-
+        enemy.run_animation_enemy()
         if enemy.rect.colliderect(player.rect):
             game_over_text = game_over_font.render("Game Over", True, (255, 255, 255))
             screen.blit(game_over_text, (screen_width // 2-120, screen_height // 2))
@@ -126,7 +152,7 @@ while running:
 
         if enemy.x + enemy.rect.width < 0:
             enemies.remove(enemy)
-
+    player.run_animation_player()
     pygame.display.update()
     clock.tick(30)
 
