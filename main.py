@@ -3,12 +3,12 @@ import random
 import sys
 
 
-
 pygame.init()
 
 # Screen dimensions
 screen_width = 1000
 screen_height = 500
+score=0
 
 # Create the screen
 screen = pygame.display.set_mode((screen_width, screen_height))
@@ -25,10 +25,6 @@ character_image = pygame.transform.scale(character_image, (50, 100))
 
 player_lives = 3
 font = pygame.font.Font(None, 36)
-
-lives_text = font.render(f"Lives: {player_lives}", True, (255, 255, 255))
-screen.blit(lives_text, (screen_width - 120, 10))
-
 
 class Enemy:
     def __init__(self, x, y):
@@ -102,13 +98,13 @@ class Character:
             self.run_animation_count+=0.5
             self.run_animation_count=self.run_animation_count%4
             
-player = Character(100, 382)
+player = Character(100, 386)
 game_over_font = pygame.font.Font(None, 64)  
 
 last_enemy_spawn_time = pygame.time.get_ticks()
 
 # Create the character
-player = Character(100, 382)
+player = Character(100, 386)
 
 # Game loop
 running = True
@@ -117,6 +113,7 @@ speed_increasing_rate = 0
 bg_x = 0
 
 while running:
+    score=score+1
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             running = False
@@ -142,7 +139,7 @@ while running:
     if current_time - last_enemy_spawn_time >= 2000:
         if random.randint(0, 100) < 2:
             enemy_x = screen_width
-            enemy_y = 382
+            enemy_y = 386
             enemy = Enemy(enemy_x, enemy_y)
             enemies.append(enemy)
             last_enemy_spawn_time = current_time  
@@ -155,9 +152,9 @@ while running:
         if enemy.rect.colliderect(player.rect):
             player_lives -= 1
             player.x = 100  # Reset player's x position
-            player.y = 382  # Reset player's y position
+            player.y = 386  # Reset player's y position
             speed_increasing_rate = 0
-            
+
             if player_lives <= 0:
                 game_over_text = game_over_font.render("Game Over", True, (255, 255, 255))
                 screen.blit(game_over_text, (screen_width // 2 - 120, screen_height // 2))
@@ -174,6 +171,8 @@ while running:
     lives_text = font.render(f"Lives: {player_lives}", True, (0, 0, 0))
     screen.blit(lives_text, (screen_width - 120, 10))
     
+    score_text= font.render(f"Score:{score}",True,(0,0,0))
+    screen.blit(score_text,(20,10))
 
     player.run_animation_player()
     pygame.display.update()
