@@ -120,27 +120,33 @@ speed_increasing_rate = 0
 bg_x = 0
 
 while running:
-    for event in pygame.event.get():
-        if event.type == pygame.QUIT:
-            running = False
-        if event.type == pygame.MOUSEBUTTONDOWN and menu_active:
-            mouse_x, mouse_y = pygame.mouse.get_pos()
-            if 400 <= mouse_x <= 600 and 300 <= mouse_y <= 400:  # Replace these coordinates with the button area
-                menu_active = False
-                game_active = True
-                last_enemy_spawn_time = pygame.time.get_ticks()
+
 
     # Menu
     if menu_active:
         screen.blit(menu_background,(0,0))
-    
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                running = False
+            if event.type == pygame.MOUSEBUTTONDOWN and menu_active:
+                mouse_x, mouse_y = pygame.mouse.get_pos()
+                if 400 <= mouse_x <= 600 and 300 <= mouse_y <= 400:  # Replace these coordinates with the button area
+                    menu_active = False
+                    game_active = True
+                    last_enemy_spawn_time = pygame.time.get_ticks()
+        pygame.display.update()
+        clock.tick(30)
+        
     # Game
     if game_active:
         score=score+1
-        keys = pygame.key.get_pressed()  # Get the currently pressed keys
-        
-        if keys[pygame.K_SPACE] and not player.is_jump:
-            player.is_jump = True
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                running = False
+            if event.type == pygame.KEYDOWN:
+                if not player.is_jump:
+                    if event.key == pygame.K_SPACE:
+                        player.is_jump = True
         
         if player.is_jump:
             player.jump()
