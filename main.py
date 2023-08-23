@@ -22,9 +22,48 @@ bg_width = background_image.get_width()
 # Load the character image
 character_image = pygame.image.load("assets/man.png").convert_alpha()
 character_image = pygame.transform.scale(character_image, (50, 100))
+LASER = pygame.image.load("assets/bullet.png")
 
 player_lives = 3
 font = pygame.font.Font(None, 36)
+
+def collide(obj1, obj2):
+    offset_x = obj2.x - obj1.x
+    offset_y = obj2.y - obj1.y
+    return obj1.mask.overlap(obj2.mask, (int(offset_x), int(offset_y))) is not None
+
+class Laser:
+    def __init__(self, x, y, img):
+        self.x = x
+        self.y = y
+        self.img = img
+        self.mask = pygame.mask.from_surface(self.img)
+
+
+    def draw(self, window):
+        window.blit(self.img, (self.x, self.y)) #changed
+
+    def move(self, vel):
+        self.x += vel
+
+    def off_screen(self, height):
+        return not(self.x <= screen_width and self.x >= 0)
+
+    def collision(self, obj):
+        return collide(self, obj)        
+
+    def move_lasers(self, vel, objs):
+        # self.cooldown()
+        for laser in self.lasers:
+            laser.move(vel)
+            if laser.off_screen(screen_width): #changed
+                self.lasers.remove(laser)
+            else:
+                for obj in objs:
+                    if laser.collision(obj):
+                        objs.remove(obj)
+                        if laser in self.lasers:
+                            self.lasers.remove(laser)
 
 class Enemy:
     def __init__(self, x, y):
@@ -34,6 +73,7 @@ class Enemy:
         self.img = pygame.transform.scale(self.img, (50, 50))
         self.rect = self.img.get_rect()
         self.rect.center = (x, y)
+        self.mask = pygame.mask.from_surface(self.img)  # Add this line
         self.run_animation_count=0
         self.img_dict = {
             0:'assets/enemy1.png',
@@ -43,6 +83,7 @@ class Enemy:
     def draw(self):
         self.rect.center = (self.x, self.y)
         screen.blit(self.img, self.rect)
+
     def run_animation_enemy(self):
         self.img = pygame.image.load(self.img_dict[int(self.run_animation_count)])
         self.img = pygame.transform.scale(self.img, (50, 50))
@@ -50,6 +91,7 @@ class Enemy:
         self.rect.center = (self.x, self.y)
         self.run_animation_count+=0.3
         self.run_animation_count=self.run_animation_count%3
+
 enemies = []
 
 class Character:
@@ -69,11 +111,67 @@ class Character:
             2:'assets/run3.png',
             3:'assets/run4.png',
         }
+        self.lasers = []
+        self.laser_img = LASER #laser 
+        # self.cool_down_counter = 30
         
+    # Getters
+    def getX(self):
+        return self.x
 
-    def draw(self):
+    def getY(self):
+        return self.y
+
+    #laser function
+    def move_lasers(self, vel, objs):
+        # self.cooldown()
+        for laser in self.lasers:
+            laser.move(vel)
+            if laser.off_screen(screen_width): #changed
+                self.lasers.remove(laser)
+            else:
+                for obj in objs:
+                    if laser.collision(obj):
+                        objs.remove(obj)
+                        if laser in self.lasers:
+                            self.lasers.remove(laser)    
+        # Character.move_lasers(laser_vel, enemies)
+    def cooldown(self):
+        if self.cool_down_counter >= self.COOLDOWN:
+            self.cool_down_counter = 0
+        elif self.cool_down_counter > 0:
+            self.cool_down_counter += 1
+
+    def shoot(self):
+        # if self.cool_down_counter == 0:
+            laser = Laser(self.x - 28, self.y - 28, self.laser_img)
+            # laser = Laser(self.x + self.rect.width, self.y + self.rect.height // 2, self.laser_img)
+            self.lasers.append(laser)
+            # self.cool_down_counter = 1    
+
+    # def shoot(self, xpos, ypos):
+    #     laser = Laser(xpos + 500, ypos, self.laser_img) 
+
+    def draw(self, window): 
         self.rect.center = (self.x, self.y)
         screen.blit(self.img, self.rect)
+
+        lasers_to_remove = []
+        enemies_to_remove = []
+        for laser in self.lasers:
+            laser.draw(window)
+            laser.move(5)
+
+            for enemy in enemies:
+                if laser.collision(enemy):
+                    lasers_to_remove.append(laser)
+                    enemies_to_remove.append(enemy)
+
+        for laser in lasers_to_remove:
+            self.lasers.remove(laser)  
+
+        for enemy in enemies_to_remove:
+            enemies.remove(enemy)  
 
     def jump(self):
         if self.jump_count >= -15:
@@ -111,9 +209,11 @@ running = True
 clock = pygame.time.Clock()
 speed_increasing_rate = 0
 bg_x = 0
+laser_vel =5
 
 while running:
     score=score+1
+
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             running = False
@@ -121,8 +221,13 @@ while running:
             if not player.is_jump:
                 if event.key == pygame.K_SPACE:
                     player.is_jump = True
+                if event.key == pygame.K_RIGHT:
+                    player.shoot()
+
     if player.is_jump:
         player.jump()
+    
+    keys = pygame.key.get_pressed()
 
     speed_increasing_rate += 0.006
     bg_x -= (10 + speed_increasing_rate)
@@ -133,7 +238,7 @@ while running:
     screen.blit(background_image, (bg_x, 0))
     screen.blit(background_image, (bg_x + bg_width, 0))
 
-    player.draw()
+    player.draw(screen)
     current_time = pygame.time.get_ticks()  
 
     if current_time - last_enemy_spawn_time >= 2000:
@@ -148,6 +253,25 @@ while running:
         enemy.x -= 15
         enemy.draw()
         enemy.run_animation_enemy()
+
+        lasers_to_remove = []
+        enemies_to_remove = []
+
+        for laser in player.lasers:
+            laser.draw(screen)
+            laser.move(5)
+            lasers_to_remove = []
+
+            for enemy in enemies:
+                if laser.collision(enemy):
+                    lasers_to_remove.append(laser)
+                    enemies_to_remove.append(enemy)
+        
+        for laser in lasers_to_remove:
+            player.lasers.remove(laser)
+
+        for enemy in enemies_to_remove:
+            enemies.remove(enemy)
 
         if enemy.rect.colliderect(player.rect):
             player_lives -= 1
