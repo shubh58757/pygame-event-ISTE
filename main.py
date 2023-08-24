@@ -27,10 +27,10 @@ player_lives = 3
 font = pygame.font.Font(None, 36)
 
 class Laser:
-    def __init__(self,x,y):
+    def __init__(self,x,y, img):
         self.x = x
         self.y = y
-        self.img = pygame.image.load("assets/bullet.png")
+        self.img = pygame.image.load(img)
         self.img = pygame.transform.scale(self.img, (20, 20))
         self.rect = self.img.get_rect()
         self.rect.center = (x, y)
@@ -57,6 +57,7 @@ class Enemy:
         self.y = y
         self.img = pygame.image.load('assets/enemy1.png') 
         self.img = pygame.transform.scale(self.img, (75, 75))
+        self.bullet_img = 'assets/enemy_bullet.png'
         self.rect = self.img.get_rect()
         self.rect.center = (x, y)
         self.run_animation_count=0
@@ -65,6 +66,7 @@ class Enemy:
             1:'assets/enemy2.png', 
             2:'assets/enemy3.png',
         }
+        self.last_shot_time = pygame.time.get_ticks()       
 
     def draw(self):
         self.rect.center = (self.x, self.y)
@@ -79,9 +81,10 @@ class Enemy:
         self.run_animation_count=self.run_animation_count%3
 
     def shoot(self):
-        enemy_laser = Laser(self.x -28, self.y -28, self.img)
+        print("enemy bullets")
+        enemy_laser = Laser(self.x - 28, self.y, self.bullet_img)
         enemy_lasers.append(enemy_laser)
-        print("Shooting enemy laser:", enemy_laser.x, enemy_laser.y)
+        self.last_shot_time = current_time
 
 enemies = []
 player_lasers = []
@@ -92,6 +95,7 @@ class Character:
         self.y = y
         self.img = pygame.image.load('assets/run1.png')
         self.img = pygame.transform.scale(self.img, (100, 100))
+        self.bullet_img = 'assets/bullet.png'
         self.rect = self.img.get_rect()
         self.rect.center = (x, y)
         self.is_jump = False
@@ -133,12 +137,10 @@ class Character:
             self.run_animation_count=self.run_animation_count%4
 
     def shoot(self):
-        laser = Laser(self.x -28, self.y -18)
+        laser = Laser(self.x -28, self.y -18, self.bullet_img)
         player_lasers.append(laser)
         print("Shooting player laser:", laser.x, laser.y)
 
-            
-player = Character(100, 386)
 game_over_font = pygame.font.Font(None, 64)  
 
 last_enemy_spawn_time = pygame.time.get_ticks()
@@ -185,8 +187,6 @@ while running:
                         player.is_jump = True
                 if event.key == pygame.K_RIGHT: 
                     player.shoot()
-                if event.key == pygame.K_LEFT:
-                    enemy.shoot()
 
         if player.is_jump:
             player.jump()
@@ -209,9 +209,8 @@ while running:
                 player_lasers.remove(laser)  # Removing offscreen lasers
 
         for enemy_laser in enemy_lasers:
-            enemy_laser.enemy_move(5)  # Move the enemy laser horizontally
-            enemy_laser.draw(screen)  # Draw the enemy laser
-
+            enemy_laser.move(-20)  # Move the enemy laser horizontally
+            enemy_laser.draw(screen)
             if enemy_laser.off_screen():
                 enemy_lasers.remove(enemy_laser)
 
@@ -219,7 +218,7 @@ while running:
         player.draw()
         current_time = pygame.time.get_ticks()  
 
-        if current_time - last_enemy_spawn_time >= 2000:
+        if current_time - last_enemy_spawn_time >= 3000:
             if random.randint(0, 100) < 2:
                 enemy_x = screen_width
                 enemy_y = 396
@@ -231,6 +230,9 @@ while running:
             enemy.x -= 15
             enemy.draw()
             enemy.run_animation_enemy()
+            current_time = pygame.time.get_ticks()
+            if current_time - enemy.last_shot_time >= 1000:
+                enemy.shoot()
 
             for laser in player_lasers:
                 if pygame.Rect.colliderect(enemy.rect, laser.rect):
