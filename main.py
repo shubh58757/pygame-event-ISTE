@@ -23,18 +23,41 @@ background_image = pygame.image.load("assets/background.png").convert()
 background_image = pygame.transform.scale(background_image, (screen_width, screen_height))
 bg_width = background_image.get_width()
 
-character_image = pygame.image.load("assets/man.png").convert_alpha()
-character_image = pygame.transform.scale(character_image, (50, 100))
-
 player_lives = 3
 font = pygame.font.Font(None, 36)
+
+class Laser:
+    def __init__(self,x,y, img):
+        self.x = x
+        self.y = y
+        self.img = pygame.image.load(img)
+        self.img = pygame.transform.scale(self.img, (20, 20))
+        self.rect = self.img.get_rect()
+        self.rect.center = (x, y)
+
+    def draw(self, window):
+        self.rect.center = (self.x, self.y)
+        screen.blit(self.img, self.rect)
+
+
+    def move(self, vel):
+        self.x += vel
+
+    def enemy_move(self,vel):
+        self.x -= vel
+
+    def off_screen(self):
+        return not(self.x <= screen_width and self.x >= 0) 
+
+enemy_lasers = []
 
 class Enemy:
     def __init__(self, x, y):
         self.x = x
         self.y = y
         self.img = pygame.image.load('assets/enemy1.png') 
-        self.img = pygame.transform.scale(self.img, (50, 50))
+        self.img = pygame.transform.scale(self.img, (75, 75))
+        self.bullet_img = 'assets/enemy_bullet.png'
         self.rect = self.img.get_rect()
         self.rect.center = (x, y)
         self.run_animation_count=0
@@ -43,17 +66,28 @@ class Enemy:
             1:'assets/enemy2.png', 
             2:'assets/enemy3.png',
         }
+        self.last_shot_time = pygame.time.get_ticks()       
+
     def draw(self):
         self.rect.center = (self.x, self.y)
         screen.blit(self.img, self.rect)
+
     def run_animation_enemy(self):
         self.img = pygame.image.load(self.img_dict[int(self.run_animation_count)])
-        self.img = pygame.transform.scale(self.img, (50, 50))
+        self.img = pygame.transform.scale(self.img, (75, 75))
         self.rect = self.img.get_rect()
         self.rect.center = (self.x, self.y)
         self.run_animation_count+=0.3
         self.run_animation_count=self.run_animation_count%3
+
+    def shoot(self):
+        print("enemy bullets")
+        enemy_laser = Laser(self.x - 28, self.y, self.bullet_img)
+        enemy_lasers.append(enemy_laser)
+        self.last_shot_time = current_time
+
 enemies = []
+player_lasers = []
 
 class Character:
     def __init__(self, x, y):
@@ -61,6 +95,7 @@ class Character:
         self.y = y
         self.img = pygame.image.load('assets/run1.png')
         self.img = pygame.transform.scale(self.img, (100, 100))
+        self.bullet_img = 'assets/bullet.png'
         self.rect = self.img.get_rect()
         self.rect.center = (x, y)
         self.is_jump = False
@@ -100,8 +135,12 @@ class Character:
             self.rect.center = (self.x, self.y)
             self.run_animation_count+=0.5
             self.run_animation_count=self.run_animation_count%4
-            
-player = Character(100, 386)
+
+    def shoot(self):
+        laser = Laser(self.x -28, self.y -18, self.bullet_img)
+        player_lasers.append(laser)
+        print("Shooting player laser:", laser.x, laser.y)
+
 game_over_font = pygame.font.Font(None, 64)  
 
 last_enemy_spawn_time = pygame.time.get_ticks()
@@ -120,7 +159,6 @@ speed_increasing_rate = 0
 bg_x = 0
 
 while running:
-
 
     # Menu
     if menu_active:
@@ -143,11 +181,13 @@ while running:
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 running = False
+
             if event.type == pygame.KEYDOWN:
-                if not player.is_jump:
-                    if event.key == pygame.K_SPACE:
+                if event.key == pygame.K_SPACE and not player.is_jump:
                         player.is_jump = True
-        
+                if event.key == pygame.K_RIGHT: 
+                    player.shoot()
+
         if player.is_jump:
             player.jump()
 
@@ -160,13 +200,28 @@ while running:
         screen.blit(background_image, (bg_x, 0))
         screen.blit(background_image, (bg_x + bg_width, 0))
 
+        # Update and draw lasers
+        for laser in player_lasers:
+            laser.move(10)  # Move the laser horizontally
+            laser.draw(screen)  # Draw the laser
+
+            if laser.off_screen():
+                player_lasers.remove(laser)  # Removing offscreen lasers
+
+        for enemy_laser in enemy_lasers:
+            enemy_laser.move(-20)  # Move the enemy laser horizontally
+            enemy_laser.draw(screen)
+            if enemy_laser.off_screen():
+                enemy_lasers.remove(enemy_laser)
+
+
         player.draw()
         current_time = pygame.time.get_ticks()  
 
-        if current_time - last_enemy_spawn_time >= 2000:
+        if current_time - last_enemy_spawn_time >= 3000:
             if random.randint(0, 100) < 2:
                 enemy_x = screen_width
-                enemy_y = 386+25
+                enemy_y = 396
                 enemy = Enemy(enemy_x, enemy_y)
                 enemies.append(enemy)
                 last_enemy_spawn_time = current_time  
@@ -175,14 +230,24 @@ while running:
             enemy.x -= 15
             enemy.draw()
             enemy.run_animation_enemy()
+            current_time = pygame.time.get_ticks()
+            if current_time - enemy.last_shot_time >= 1000:
+                enemy.shoot()
+
+            for laser in player_lasers:
+                if pygame.Rect.colliderect(enemy.rect, laser.rect):
+                    print("Collision detected!")
+                    player_lasers.remove(laser)
+                    enemies.remove(enemy)
+                    score+= 10
+                    print("Remaining lasers:", len(player_lasers))
+                    break
 
             if enemy.rect.colliderect(player.rect):
-                if not player.is_jump:  # Check if the player is not jumping
-                    player.x = 100  # Reset player's x position
-                    player.y = 386  # Reset player's y position
-                    speed_increasing_rate = 0
+                print
+                speed_increasing_rate = 0
                 player_lives -= 1
-
+                enemies.remove(enemy)
                 if player_lives <= 0:
                     game_over_text = game_over_font.render("Game Over", True, (255, 255, 255))
                     screen.blit(game_over_text, (screen_width // 2 - 120, screen_height // 2))
@@ -191,10 +256,9 @@ while running:
                     pygame.quit()
                     sys.exit()
 
-                enemies.remove(enemy)  # Move this line inside the collision check loop
-
             if enemy.x + enemy.rect.width < 0:
                 enemies.remove(enemy)
+
 
         lives_text = font.render(f"Lives: {player_lives}", True, (0, 0, 0))
         screen.blit(lives_text, (screen_width - 120, 10))
